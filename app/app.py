@@ -186,7 +186,7 @@ def mapa():
     start_lat = df['lat'].mean()
     start_lon = df['lon'].mean()
     
-    usa = gpd.read_file('/Users/javierjaramillo/Desktop/chatbot/app/cb_2013_us_county_500k.geojson')
+    usa = gpd.read_file('./app/cb_2013_us_county_500k.geojson')
     json_municipio = usa[usa['Name'] == municipio]
     
     print(json_municipio)
