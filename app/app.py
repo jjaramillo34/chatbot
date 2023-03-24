@@ -155,7 +155,7 @@ def timeline_show():
             "credit": "Todos por Puerto Rico"
             },
             "text": {
-            "headline": "Todos por Puerto Rico <br> Pipeline de datos de Proyectos",
+            "headline": "Pipeline de datos de Proyectos",
             "text": "<p> Trabajando para con todos Puerto Rico</p>"
             }
         },
@@ -172,13 +172,15 @@ def mapa():
     unique_municipios = df["municipio2"].unique()
     sorted_municipios = sorted(unique_municipios)
     #print(sorted_municipios)
-    municipio = st.sidebar.selectbox("Municipio", sorted_municipios)
+    st.sidebar.title("Filter by Municipio")
+    #municipio = st.sidebar.selectbox("Municipio", sorted_municipios)
+    municipio = st.sidebar.selectbox("Por favor seleccione un municipio", sorted_municipios)
     # filter dataframe by selected diseno
     df = df[df["municipio2"] == municipio]
     #print(df)
 
     # lat and log columns dataframe
-    df = df[['lat', 'log', 'costo', 'diseno', 'municipio_new', 'caption', 'sector', 'costo_ele', "municipio2", "tragedia", "categoria", "tamano", "image", "icon", "year", "month", "date", "precio"]]
+    df = df[['lat', 'log', 'costo', 'diseno', 'municipio_new', 'caption', 'title', 'sector', 'costo_ele', "municipio2", "tragedia", "categoria", "tamano", "image", "icon", "year", "month", "date", "precio"]]
     df = df.rename(columns={'lat': 'lat', 'log': 'lon'})
     df.dropna(inplace=True)
     
@@ -205,10 +207,10 @@ def mapa():
     cols[1].metric("Total de Proyectos", total_proyectos, delta=f"% {str(round(delta2, 2))} del total de proyectos en la isla.")
     total_proyectos_completados = df[df["diseno"] == "Completado"]["municipio2"].count()
     delta3 = (df[df["diseno"] == "Completado"]["municipio2"].count() / total_proyectos) * 100
-    cols[2].metric("Total de Proyectos Completados", total_proyectos_completados, delta=f"% {str(round(delta3, 2))} de los proyectos en {municipio}.")
+    cols[3].metric("Total de Proyectos Completados", total_proyectos_completados, delta=f"% {str(round(delta3, 2))} de los proyectos en {municipio}.")
     total_costo_proyectos_completados = "$" + format(df[df["diseno"] == "Completado"]["costo"].sum(), ",d")
     delta4 = (df[df["diseno"] == "Completado"]["costo"].sum() / df['costo'].sum()) * 100
-    cols[3].metric("Costo Total de Proyectos Completados", total_costo_proyectos_completados, delta=f"% {str(round(delta4, 2))} de la inversion total en {municipio}.")
+    cols[2].metric("Costo Total de Proyectos Completados", total_costo_proyectos_completados, delta=f"% {str(round(delta4, 2))} de la inversion total en {municipio}.")
     
     cols = st.columns([0.70, 0.30])
     
@@ -219,7 +221,7 @@ def mapa():
             map_style='mapbox://styles/mapbox/light-v9',
             #costo=0,
             tooltip={
-                'html': '<b>Costo del Proyecto: </b> {precio} <br> <b>Estado: </b> {diseno} <br> <b>Municipio: </b> {municipio_new} <br> <b>Proyecto: </b> {caption} <br> <b>Sector: </b> {sector}',
+                'html': '<h5>{caption}</h5> <br> <b>Costo del Proyecto: </b> {precio} <br> <b>Estado: </b> {diseno} <br> <b>Municipio: </b> {municipio2} <br> <b>Proyecto: </b> {title} <br> <b>Sector: </b> {sector}',
                 'style': {
                     'backgroundColor': 'steelblue',
                     'color': 'white',
@@ -354,38 +356,38 @@ def dashboard():
     municipio = st.sidebar.selectbox("Municipio", sorted_municipios)
     
     df_filter = df[df["diseno"] == municipio]
-    print(df_filter)
+    #print(df_filter)
     df_filter.groupby('diseno')['costo'].count().nlargest(20).reset_index()
     
-    df_test = df_filter.groupby('municipio_new')['costo'].count().nlargest(20).reset_index()
-    text_count = list(df_test.itertuples(index=False, name=None))
-        
-    cols = st.columns(2)
+    #df_test = df_filter.groupby('municipio_new')['costo'].count().nlargest(20).reset_index()
+    #text_count = list(df_test.itertuples(index=False, name=None))
+    #    
+    #cols = st.columns(2)
 
-    data = [{"name": name, "value": value} for name, value in text_count]
-    
-    print(data)
-    
-    with cols[0]:
-        st.markdown("### TDPR Word Cloud")
-        wordcloud_option = {"series": [{"type": "wordCloud", "data": data}]}
-        st_echarts(wordcloud_option)
-        
-    nodes = [{"name": name, "symbolSize": value/100} for name, value in text_count]
-    
-    links = []
-    for i in nodes:
-        for j in nodes:
-            links.append({"source": i.get("name"), "target": j.get("name")})
-    c = (
-        Graph()
-        .add("", nodes, links, repulsion=8000)
-        .set_global_opts(title_opts=opts.TitleOpts(title="Count of Municipios"))
-    )
+    #data = [{"name": name, "value": value} for name, value in text_count]
+    #
+    #print(data)
+    #
+    #with cols[0]:
+    #    st.markdown("### TDPR Word Cloud")
+    #    wordcloud_option = {"series": [{"type": "wordCloud", "data": data}]}
+    #    st_echarts(wordcloud_option)
+    #    
+    #nodes = [{"name": name, "symbolSize": value/100} for name, value in text_count]
+    #
+    #links = []
+    #for i in nodes:
+    #    for j in nodes:
+    #        links.append({"source": i.get("name"), "target": j.get("name")})
+    #c = (
+    #    Graph()
+    #    .add("", nodes, links, repulsion=8000)
+    #    .set_global_opts(title_opts=opts.TitleOpts(title="Count of Municipios"))
+    #)
 
-    with cols[1]:
-        st.markdown("### Count of Municipios")
-        st_pyecharts(c)
+    #with cols[1]:
+    #    st.markdown("### Count of Municipios")
+    #    st_pyecharts(c)
         
     #st.dataframe(df_filter)
     
@@ -415,7 +417,6 @@ def dashboard():
     )
     # replace nan with 0
     new = count_sector.fillna(0)
-    st.write(new)
     
     data = [
     ['Agua', 1, 17, 81, 18, 39, 7],
@@ -441,7 +442,23 @@ def dashboard():
         {'value': val, 'symbol': pathSymbols[key]} for key, val in data_by_year[2019].items()
     ]
     
-    map_data = map_2018 + map_2019
+    map_2020 = [
+        {'value': val, 'symbol': pathSymbols[key]} for key, val in data_by_year[2020].items()
+    ]
+    
+    map_2021 = [
+        {'value': val, 'symbol': pathSymbols[key]} for key, val in data_by_year[2021].items()
+    ]
+    
+    map_2022 = [
+        {'value': val, 'symbol': pathSymbols[key]} for key, val in data_by_year[2022].items()
+    ]
+    
+    map_2023 = [
+        {'value': val, 'symbol': pathSymbols[key]} for key, val in data_by_year[2023].items()
+    ]
+    
+    map_data = map_2018 + map_2019 + map_2020 + map_2021 + map_2022 + map_2023
     
     #st.write(map_data)
     
@@ -450,17 +467,20 @@ def dashboard():
                 "name": key,
                 "type": "pictorialBar",
                 "label": labelSetting,
+                "barGap": "20%",
                 "symbolRepeat": True,
-                "symbolSize": ["80%", "60%"],
-                "barCategoryGap": "40%",
-                "data": map_data,
+                "symbolSize": ["60%", "40%"],
+                "barCategoryGap": "30%",
+                "data": map_data[0: ],
             }
-                for key in years
-    ]
+                for i, key in enumerate(years)
+        ]
     
-    #print(series)
-    #st.json(series)
-    #
+    for i in range(len(series)):
+        series[i]['data'] = map_data[i*9: (i+1)*9]
+        
+    #st.write(series)
+    
     option = {
         "title": {"text": "Proyectos por sector"},
         "legend": {"data": ["2018", "2019", "2020", "2021", "2022", "2023"]},
@@ -471,7 +491,7 @@ def dashboard():
             "inverse": True,
             "axisLine": {"show": False},
             "axisTick": {"show": False},
-            "axisLabel": {"margin": 30, "fontSize": 14},
+            "axisLabel": {"margin": 40, "fontSize": 12},
             "axisPointer": {"label": {"show": True, "margin": 30}},
         },
         "xAxis": {
@@ -482,13 +502,18 @@ def dashboard():
         },
         "series": series,
     }
-    st_echarts(option, height="500px", key="echarts")
+    st_echarts(option, height="700px", key="echarts")
+    
+    st.write(new, use_column_width=True)
+    print(new)
+    
+    #st.json(option)
     
 def about():
     st.write("---")
     cols = st.columns(2)
     with cols[0]:
-        st.image("https://www.elnuevodia.com/resizer/7XT2pZ6qrm6JeRrQhvd4Q3oeixo=/arc-anglerfish-arc2-prod-gfrmedia/public/DVWPMSDP6JDB3DMYLUAZEHCG4I.png", caption="Logo")
+        st.image("https://www.elnuevodia.com/resizer/7XT2pZ6qrm6JeRrQhvd4Q3oeixo=/arc-anglerfish-arc2-prod-gfrmedia/public/DVWPMSDP6JDB3DMYLUAZEHCG4I.png", caption="Trabaja con ustedes")
     with cols[1]:
         st.markdown("## **Acerca**")
         st.markdown("""Este proyecto es una iniciativa de Todos por Puerto Rico, una organización sin fines de lucro que busca promover la transparencia y 
@@ -499,11 +524,11 @@ def about():
         st.markdown("""Este proyecto es parte de un proyecto de investigación que se está llevando a cabo con la ayuda de Todos por Puerto Rico. El objetivo de este proyecto es
                     dar a conocer la información de los proyectos de infraestructura que se están ejecutando en Puerto Rico. Para esto, se ha creado una herramienta que permite
                     filtrar la información por municipio, sector y año.""")
-        st.markdown("## **Equipo**")
-        st.markdown("""
-                    Este proyecto ha sido desarrollado por dos emprededores de Puerto Rico y Ecuador, Daniel Ortiz (mandrake) y Javier Jaramillo (javierjaramillo). Aqui puedes encontrar
-                    los repositorios de los proyectos de Javier: [Github](https://github.com/jjaramillo34/) y [LinkedIn](https://www.linkedin.com/in/javier-jaramillo-7b5b3b1b3/). O nos puedes
-                    contactor por email: [Javier](mailto:jjaramillo34@gmail.com) y [Daniel](mailto:d@vinte.sh)""")
+        #st.markdown("## **Equipo**")
+        #st.markdown("""
+        #            Este proyecto ha sido desarrollado por dos emprededores de Puerto Rico y Ecuador, Daniel Ortiz (mandrake) y Javier Jaramillo (javierjaramillo). Aqui puedes encontrar
+        #            los repositorios de los proyectos de Javier: [Github](https://github.com/jjaramillo34/) y [LinkedIn](https://www.linkedin.com/in/javier-jaramillo-7b5b3b1b3/). O nos puedes
+        #            contactor por email: [Javier](mailto:jjaramillo34@gmail.com) y [Daniel](mailto:d@vinte.sh)""")
                     
         st.markdown("## **Agradecimientos**")
         st.markdown(""" Agradecemos a Todos por Puerto Rico por la oportunidad de llevar a cabo este proyecto. Darles las gracias a los miembros de la organización por su apoyo y orientación
