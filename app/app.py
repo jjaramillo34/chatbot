@@ -97,7 +97,7 @@ def timeline_show():
     # filter dataframe by selected diseno
     df = df[df["municipio_new"] == municipio]
 
-    st.title("Todos por Puerto Rico - Pipeline de datos de Proyectos")
+    #st.title("Todos por Puerto Rico - Pipeline de datos de Proyectos")
 
     #cols = st.columns(4)
     ## important dashboard metrics
