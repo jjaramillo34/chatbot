@@ -12,7 +12,10 @@ from streamlit_option_menu import option_menu
 from pyecharts import options as opts
 from pyecharts import options as opts
 from streamlit_echarts import st_echarts, st_pyecharts
-from pyecharts.charts import Pie, Bar, PictorialBar, Line, Grid, Page, Tab, Timeline, Graph
+from pyecharts.charts import Pie, Bar, PictorialBar, Line, Grid, Page, Tab, Timeline, Graph, WordCloud
+#from pyecharts.commons.utils import JsCode
+from streamlit_echarts import JsCode
+from streamlit_echarts import Map
 import geopandas as gpd
 
 # import mongo db
@@ -346,11 +349,149 @@ def mapa():
         #st.write(ai_test)
         st.write("Powered by OpenAI GPT-3 and Todos por Puerto Rico")
         
+    st.write("---")
+    
+    formatter = JsCode(
+    "function (params) {"
+    + "var value = (params.value + '').split('.');"
+    + "value = value[0].replace(/(\d{1,3})(?=(?:\d{3})+(?!\d))/g, '$1,');"
+    + "return params.seriesName + '<br/>' + params.name + ': ' + value;}"
+).js_code
+    
+    df1 = load_data()
+    usa = gpd.read_file('./app/cb_2013_us_county_500k.geojson')
+    puerto_rico = usa = usa[usa['LSAD'] == '13']
+    puerto_rico = puerto_rico.drop(columns=['description', 'LSAD', 'STATEFP', 'COUNTYFP', 'COUNTYNS', 'AFFGEOID', 'GEOID','ALAND', 'AWATER', 'altitudeMode', 'visibility', 'tessellate'])
+    puerto_rico = puerto_rico.rename(columns={'Name': 'name', 'geometry': 'geometry'})
+    
+    #j_obj = json.loads(puerto_rico.to_json())
+    
+    with open('./app/pr.json', 'w') as f:
+        json.dump(json.loads(puerto_rico.to_json()), f)
+    
+    with open('./app/pr.json') as f:
+        map = Map(
+            "Puerto Rico",
+            json.loads(f.read()),
+            {
+                'Adjuntas': {'left': -10, 'top': 26, 'zoom': 14},
+                #'Aguada': {'left': -66, 'top': 18, 'zoom': 18},
+            }
+        )
+    sum_municipio = df1.groupby('municipio2')['costo'].sum().reset_index()
+    print(sum_municipio.head())
+    
+    min_sum = sum_municipio['costo'].min() - 10000
+    max_sum = sum_municipio['costo'].max()
+    
+    #st.write(min_sum, max_sum)
+
+    data = [
+        {"name": val[1], "value": val[2]} for val in sum_municipio.itertuples()
+    ]
+        
+    options = {
+        "title": {
+            "text": "Costo de los proyectos de reconstrucción en Puerto Rico",
+            "subtext": "Data from www.census.gov",
+            "sublink": "http://www.census.gov/popest/data/datasets.html",
+            "left": "right",
+        },
+        "tooltip": {
+            "trigger": "item",
+            "showDelay": 0,
+            "transitionDuration": 0.2,
+            "formatter": formatter,
+        },
+        "visualMap": {
+            "left": "right",
+            "min": int(min_sum),
+            "max": int(max_sum),
+            "inRange": {
+                "color": [
+                    '#313695',
+                    '#4575b4',
+                    '#74add1',
+                    '#abd9e9',
+                    '#e0f3f8',
+                    '#ffffbf',
+                    '#fee090',
+                    '#fdae61',
+                    '#f46d43',
+                    '#d73027',
+                    '#a50026',
+                    "#800026",
+                    "#8A2BE2",
+                    "#A52A2A",
+                    "#DEB887",
+                    
+                ]
+            },
+            "text": ["High", "Low"],
+            "calculable": True,
+        },
+        "toolbox": {
+            "show": True,
+            "left": "left",
+            "top": "top",
+            "feature": {
+                "dataView": {"readOnly": False},
+                "restore": {},
+                "saveAsImage": {"pixelRatio": 2,
+                                "title": "Guardar como imagen",
+                                "name": "map",
+                                "excludeComponents": ["toolbox"],
+                                "backgroundColor": "#fff",
+                                "show": True,
+                                "type": "png",
+                                "lang": ["Guardar"],
+                                "icon": "path://M1024 896v128H896v128H768V896H640V768h128V640h128v128h128zM896 0v128H768v128H640V128H512V0h384z",
+                                            
+                },
+            },
+        },
+        "series": [
+            {
+                "name": "Costo Total por municipio",
+                "type": "map",
+                "roam": True,
+                "map": "Puerto Rico",
+                "emphasis": {
+                    "label": {
+                        #"show": True,
+                        "color": "#fff",
+                        "fontSize": 16,
+                        "fontWeight": "bold",
+                        "backgroundColor": "#000",
+                        "borderRadius": 5,
+                        "padding": [5, 10, 5, 10],
+                        "shadowColor": "rgba(0, 0, 0, 0.5)",
+                        "formatter": "{b}: ${c}",
+                        }
+                    },
+                
+                "textFixed": {'Adjuntas': [20, -20]},
+                "itemStyle": {
+                    "areaColor": "#323c48", 
+                    "borderColor": "#111",
+                },
+                
+                "data": data,
+            }
+        ],
+    }
+    st_echarts(options, map=map, height="700px")
+
+    
+        
 def dashboard():
-    st.title("Dashboard")
-    st.markdown("Dashboard")
     df = load_data()
     #print(df)
+    unique_year = df["year"].unique()
+    sorted_year = sorted(unique_year)
+    st.sidebar.title("Filtros de Proyectos de Reconstrucción por Año")
+    year = st.sidebar.multiselect("Escoja maximo 2 Años para ver mejor la vizualizacion", sorted_year, default=2018, key="year_filter")
+    
     unique_municipios = df["diseno"].unique()
     sorted_municipios = sorted(unique_municipios)
     municipio = st.sidebar.selectbox("Municipio", sorted_municipios)
@@ -504,10 +645,46 @@ def dashboard():
     }
     st_echarts(option, height="700px", key="echarts")
     
-    st.write(new, use_column_width=True)
+    #st.write(new, use_column_width=True)
     print(new)
     
     #st.json(option)
+    
+    cols = st.columns(2)
+        
+    with cols[0]:
+        count_sector = df.pivot_table(index="categoria", columns="year", values="municipio", aggfunc="count")
+        new = count_sector.fillna(0)
+        st.write(new, use_column_width=True)
+        data_out = [
+            {"name": val[0], "value": val[1]} 
+            for val in new.itertuples()
+        ]
+        
+        options = {
+            "tooltip": {"trigger": "item"},
+            "legend": {"top": "5%", "left": "center"},
+            "series": [
+                {
+                    "name": "Proyectos por categoria",
+                    "type": "pie",
+                    "radius": ["40%", "70%"],
+                    "avoidLabelOverlap": False,
+                    "itemStyle": {
+                        "borderRadius": 10,
+                        "borderColor": "#fff",
+                        "borderWidth": 2,
+                    },
+                    "label": {"show": False, "position": "center"},
+                    "emphasis": {
+                        "label": {"show": True, "fontSize": "20", "fontWeight": "bold"}
+                    },
+                    "labelLine": {"show": False},
+                    "data": data_out,
+                }
+            ],
+        }
+    st_echarts(options=options, height="500px",)
     
 def about():
     st.write("---")
