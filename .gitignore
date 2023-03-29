@@ -145,12 +145,9 @@ venv.bak/
 # DS_Store
 .DS_Store
 
-<<<<<<< HEAD
 # .streamlit
 .streamlit/
 
-=======
->>>>>>> 9e50109 (Added new map features and AI description)
 # mypy
 .mypy_cache/
 .dmypy.json
@@ -183,7 +180,22 @@ poetry.toml
 pyrightconfig.json
 
 # End of https://www.toptal.com/developers/gitignore/api/python
-<<<<<<< HEAD
 .streamlit/secrets.toml
-=======
->>>>>>> 9e50109 (Added new map features and AI description)
+
+# ignore all files in the .ipynb_checkpoints folder
+.ipynb_checkpoints/*
+
+# ignore all files in the .idea folder
+.idea/*
+
+# ignore all files in the .vscode folder
+.vscode/*
+
+# ignore all files in the .pytest_cache folder
+.pytest_cache/*
+
+# ignore file scrape_unclaimed.ipynb
+scrape_unclaimed.ipynb
+
+# ignore file unclaimedbaggage.json
+unclaimedbaggage.json
